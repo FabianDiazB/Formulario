@@ -8,7 +8,7 @@ import { Tab } from 'bootstrap';
 
 
 const data = [
-{id: 1, nombre: 'usuario', correo: 'prueba', telefono: '123'},
+{id: 1, nombre: 'Usuario', correo: 'prueba', telefono: '123'},
 
 
 ];
