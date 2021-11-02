@@ -1,1 +1,2 @@
 En este repositorio se encuentra el Frontend creado en el programa Visual Studio Code, junto con la API llamada "APIFinal" creada en Visual Studio en un proyecto de ASP.NET CORE utilizando el micro ORM Dapper, y el script para crear la base de datos utilizada para almacenar los datos.
+Nota: Para el proyecto tuve que investigar, apoyarme de tutoriales y foros de internet para poder realizar los códigos y demás procedimientos ya que desconozco mucho el tema. 
