@@ -1,246 +1,205 @@
-import React from 'react'; 
-import logo from './logo.svg'; 
-import './App.css'; 
-import 'bootstrap/dist/css/bootstrap.min.css'; 
-import {Table, Button, Container, Modal, ModalBody, ModalHeader, FormGroup, ModalFooter,} from 'reactstrap';
-import { Tab } from 'bootstrap';
+import React, {useState, useEffect} from 'react';
+import './App.css';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import axios from 'axios';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from 'reactstrap';
+import {Table, Button} from 'reactstrap';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faEdit, faTrashAlt,faDatabase } from '@fortawesome/free-solid-svg-icons';
 
 
 
-const data = [
-{id: 1, nombre: 'Usuario', correo: 'prueba', telefono: '123'},
 
+function App(){
+  const baseUrl="https://localhost:44362/api/usuarios";
+  const [data,setData]=useState([]);
+  const[modaleditar,setmodaleditar]=useState(false);
+  const[modalinsertar,setmodalinsertar]=useState(false);
+  const[modaleliminar,setmodaleliminar]=useState(false);
+  const[usuarioSeleccionado,setUsuarioSeleccionado]=useState({
+    id: '',
+    nombre: '',
+    correo: '',
+    telefono:''
+  })
 
-];
+    const handleChange=e=>{
+      const {name, value}=e.target;
+      setUsuarioSeleccionado({
+        ...usuarioSeleccionado,
+        [name]: value
+      });
+      console.log(usuarioSeleccionado);
+      }
 
-class App extends React.Component {
-  state= {
-    data: data, 
-form:{
-  id:'',
-   nombre:'',
-    correo:'',
-     telefono:'' 
-},
-  modalInsertar: false,
-  modaleditar: false,
-  };
+  
+  const abrircerrarmodalinsertar=()=>{
+    setmodalinsertar(!modalinsertar);
+  }
 
-handleChange =e=>{
-  this.setState({
-    form:{
-      ...this.state.form, 
-      [e.target.name]: 
-      e.target.value,
+    const abrircerrarmodaleditar=()=>{
+      setmodaleditar(!modaleditar);
     }
 
-  });
-}
+    const abrircerrarmodaleliminar=()=>{
+      setmodaleliminar(!modaleliminar);
+    }
 
-mostrarmodalin=()=>{
-  this.setState({modalInsertar: true});
-}
+    const peticionGet=async()=>{
+      await axios.get(baseUrl)
+      .then(response=>{
+        setData(response.data);
+      }).catch(error=>{
+        console.log(error);
+      })
+    }
 
- ocultarmodalin=()=>{
-   this.setState({modalInsertar: false});
- }
+    const peticionPost=async()=>{
+      delete usuarioSeleccionado.id;
+      usuarioSeleccionado.telefono=parseInt(usuarioSeleccionado.telefono);
+      await axios.post(baseUrl, usuarioSeleccionado)
+      .then(response=>{
+        setData(data.concat(response.data));
+        abrircerrarmodalinsertar();
+      }).catch(error=>{
+        console.log(error);
+      })
+    }
 
- mostrarmodaleditar=(registro)=>{
-  this.setState({modaleditar: true, form: registro});
-}
+      const peticionPut=async()=>{
+        usuarioSeleccionado.telefono=parseInt(usuarioSeleccionado.telefono);
+        await axios.put(baseUrl+"/"+usuarioSeleccionado.id, usuarioSeleccionado)
+        .then(response=>{
+          var respuesta=response.data;
+          var dataAuxiliar=data;
+          dataAuxiliar.map(usuario=>{
+            if(usuario.id===usuarioSeleccionado.id){
+              usuario.nombre=respuesta.nombre;
+              usuario.correo=respuesta.correo;
+              usuario.telefono=respuesta.telefono;
+            }
+          });
+          abrircerrarmodaleditar();
+        }).catch(error=>{
+          console.log(error);
+        })  
+      } 
 
- ocultarmodaleditar=()=>{
-   this.setState({modaleditar: false});
-
-  }
-
- insertar=()=>{
-   var nuevovalor={...this.state.form};
-   nuevovalor.id=this.state.data.length+1;
-   var lista=this.state.data;
-   lista.push(nuevovalor);
-   this.setState({data: lista, modalInsertar: false});
-
-}
-
-editar=(dato)=>{
-var contador=0;
-var lista=this.state.data;
-lista.map((registro)=>{
-
-  if(dato.id==registro.id){
-    lista[contador].nombre=dato.nombre;
-    lista[contador].correo=dato.correo;
-    lista[contador].telefono=dato.telefono;
-  }
-  contador++;
-});
-this.setState({data: lista, modaleditar:false});
-
-}
-
-eliminar=(dato)=>{
-  var opcion=window.confirm ("Estas seguro de eliminar al usuario  " + dato.id);
-  if(opcion){
-    var contador=0;
-    var lista = this.state.data;
-    lista.map((registro)=>{
-      if(registro.id==dato.id){
-        lista.splice(contador, 1);
+      const peticionDelete=async()=>{
+        await axios.delete(baseUrl+"/"+usuarioSeleccionado.id)
+        .then(response=>{
+          setData(data.filter(usuario=>usuario.id!==response.data));
+          abrircerrarmodaleliminar();
+        }).catch(error=>{
+          console.log(error);
+          })
       }
-      contador++;
+      
+      const seleccionarUsuario=(usuario, caso)=>{
+        setUsuarioSeleccionado(usuario);
+        (caso==="Editar")?
+        abrircerrarmodaleditar(): abrircerrarmodaleliminar();
+      }
 
-    })
-    this.setState({data: lista});
-  }
-}
+        useEffect(()=>{
+          peticionGet();
+        },[])
 
-  render() {
-    return(
-      <>
-      <Container>
-    <br />
-    <Button color="primary" onClick={()=>this.mostrarmodalin()}>Nuevo Usuario</Button>
-<br /> 
-<br /> 
+        return(
+        <div className="App">
+          
+        <button onClick={()=>abrircerrarmodalinsertar()} className="btn btn-primary"><FontAwesomeIcon icon={faDatabase}/>Agregar Usuario</button>
 
-<Table>
-<thead><tr><th>Id</th>
-<th>nombre</th>
-<th>correo</th>
-<th>telefono</th>
-<th>accion</th></tr></thead>
-<tbody>
-      {this.state.data.map((elemento)=>(
-          <tr>
-            <td>{elemento.id}</td>
-            <td>{elemento.nombre}</td>
-            <td>{elemento.correo}</td>
-            <td>{elemento.telefono}</td>
-            <td><Button color="success" onClick={()=>this.mostrarmodaleditar(elemento)}>Modificar</Button>{"   "}
-            <Button color="danger" onClick={()=>this.eliminar(elemento)}>Eliminar</Button> </td>
-            </tr>
-
-      ))}
-
-
-</tbody>
-
-
-</Table>
-</Container >
-  
-<Modal isOpen={this.state.modalInsertar}>
-        <ModalHeader>
-        <div><h3>Inserte Usuario</h3></div>
-        </ModalHeader>
+        <Table >
+          <thead>
+        <tr>
+        <th>ID</th>
+        <th>Nombre</th>
+        <th>Correo</th>
+        <th>Telefono</th>
+        <th>Acciones</th>
+        </tr>
+            </thead>
+          <tbody>
+        {data.map(usuario=>(
+          <tr key={usuario.id}>
+            <td>{usuario.id} </td>
+            <td>{usuario.nombre} </td>
+            <td>{usuario.correo} </td>
+            <td>{usuario.telefono} </td>
         
-      <ModalBody>
-        <FormGroup>
-          <label>
-            Id:
-          </label>
+          <td>
+            <Button className="btn btn-success" onClick={()=>seleccionarUsuario(usuario, "Editar")}><FontAwesomeIcon icon={faEdit}/>Modificar</Button>{"    "}
+            <Button className="btn btn-danger" onClick={()=>seleccionarUsuario(usuario, "Eliminar")}><FontAwesomeIcon icon={faTrashAlt}/>Eliminar</Button>
+          </td>
+          </tr>
 
-        <input
-        className="form-control"
-        readOnly
-        type="text" value={this.state.data.length+1}
-        />
+        ))}
+          </tbody>
 
-        </FormGroup>
-<FormGroup>
-          <label>
-            nombre:
-          </label>
+        </Table>
+            <Modal isOpen={modalinsertar}>
+          <ModalHeader>Agregue Nuevo Usuario</ModalHeader>
+          <ModalBody>
+          <div className="form-group">
+          <label>Nombre:</label>
+          
+          <input type="text" className="form-control" name="nombre" onChange={handleChange}/>
+          
+          <label>Correo:</label>
+          
+          <input type="text" className="form-control" name="correo" onChange={handleChange}/>
+          
+          <label>Telefono:</label>
+          
+          <input type="number" className="form-control" name="telefono" onChange={handleChange}/>
+          
+          </div>
+          </ModalBody>
+          <ModalFooter>
+          <Button className="btn btn-success" onClick={()=>peticionPost()}>Agregar</Button>{"  "}
+          <Button className="btn btn-danger" onClick={()=>abrircerrarmodalinsertar()}>Cancelar</Button>
+          </ModalFooter>
+            </Modal>
 
-        <input
-        className="form-control"
-        name="nombre"
-        type="text" onChange={this.handleChange}
-        />
-</FormGroup>
+          <Modal is isOpen={modaleditar}>
+            <ModalHeader>Modificar datos</ModalHeader>
+            <ModalBody>
+            <div className="form-group">
+            <label>ID:</label>
+            
+          <input type="text" className="form-control" readOnly value={usuarioSeleccionado && usuarioSeleccionado.id}/>
+          
+          <label>Nombre:</label>
+          
+          <input type="text" className="form-control" name="nombre" onChange={handleChange} value={usuarioSeleccionado && usuarioSeleccionado.nombre} />
+          
+          <label>Correo:</label>
+         
+          <input type="text" className="form-control" name="correo" onChange={handleChange} value={usuarioSeleccionado && usuarioSeleccionado.correo} />
+          
+          <label>Telefono:</label>
+          
+          <input type="number" className="form-control" name="telefono" onChange={handleChange} value ={usuarioSeleccionado && usuarioSeleccionado.telefono} />
+         
+          </div>
+            </ModalBody>
+          <ModalFooter>
+            <Button className="btn btn-success" onClick={()=>peticionPut()}>Modificar</Button>
+            <Button className="btn btn-danger" onClick={()=>abrircerrarmodaleditar()}>Cancelar</Button>
+          </ModalFooter>
+          </Modal>
 
-<FormGroup>
-
-<label>
-            correo:
-          </label>
-
-        <input
-        className="form-control"
-        name="correo"
-        type="text" onChange={this.handleChange}
-        />
-
-</FormGroup>
-
-        <FormGroup>
-        <label>
-            telefono:
-          </label>
-
-        <input
-        className="form-control"
-        name="telefono"
-        type="number" onChange={this.handleChange}
-        />
-
-        </FormGroup>
-
-
-      </ModalBody>
-
-      <ModalFooter>
-        <Button color="success"onClick={()=>this.insertar()}>Finalizar</Button>
-        <Button color="danger" onClick={()=>this.ocultarmodalin()}>Cancelar</Button> 
-
-      </ModalFooter>
-</Modal>
-
-<Modal isOpen={this.state.modaleditar}>
-<ModalHeader>
-  <div>
-    <h3>Editar Usuario</h3>
-  </div>
-</ModalHeader>
-
-<ModalBody>
-
-<FormGroup>
-  <label>id:</label>
-  <input className="form-control" readOnly type="text" value={this.state.form.id} />
-</FormGroup>
-
-<FormGroup>
-<label>nombre:</label>
-  <input className="form-control" name="nombre" type="text" onChange={this.handleChange}value={this.state.form.nombre} />
-</FormGroup>
-
-<FormGroup>
-<label>correo:</label>
-  <input className="form-control" name="correo" type="text" onChange={this.handleChange}value={this.state.form.correo} />
-</FormGroup>
-
-<FormGroup>
-<label>telefono:</label>
-  <input className="form-control" name="telefono" type="numb" onChange={this.handleChange} value={this.state.form.telefono} />
-</FormGroup>
-
-</ModalBody>
-
-<ModalFooter>
-        <Button color="success" onClick={()=>this.editar(this.state.form)} >Editar</Button>
-        <Button color="danger"onClick={()=>this.ocultarmodaleditar()} >Cancelar</Button> 
-
-
-</ModalFooter>
-
-</Modal>
-
-
- </> );
-  }
-
-}
-export default App;
-
+          <Modal isOpen={modaleliminar}>
+          <ModalBody>¿Deseas eliminar al usuario {usuarioSeleccionado && usuarioSeleccionado.nombre} ?
+           </ModalBody>
+           <ModalFooter>
+             <Button className="btn btn-danger" onClick={()=>peticionDelete()}>Aceptar</Button>
+             <Button className="btn btn-primary" onClick={()=>abrircerrarmodaleliminar()}>Cancelar</Button>
+           </ModalFooter>
+             </Modal>
+             
+              </div>
+     );
+   }
+        export default App;
